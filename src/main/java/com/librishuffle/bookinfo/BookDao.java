@@ -91,8 +91,6 @@ public class BookDao {
 
     public Optional<Book> getByIsbn(String isbn) throws IOException {
 
-        checkArgument(!isNullOrEmpty(isbn));
-
         if (cachingEnabled) {
             Book book = bookCache.getIfPresent(isbn);
 
@@ -111,14 +109,14 @@ public class BookDao {
 
         Optional<Book> bookOptional;
 
-        if (!queryResult.getItems().isEmpty()) {
+        if (queryResult.getItems().isEmpty()) {
+            bookOptional = trySearchForIsbn(isbn);
+        } else {
             bookOptional = queryResult
                     .getItems()
                     .stream()
                     .map(Book::new)
                     .findAny();
-        } else {
-            bookOptional = trySearchForIsbn(isbn);
         }
 
         if (cachingEnabled && bookOptional.isPresent()) {
@@ -131,15 +129,16 @@ public class BookDao {
     private Optional<Book> trySearchForIsbn(String isbn) throws IOException {
         checkArgument(!isNullOrEmpty(isbn));
 
+        //noinspection EqualsBetweenInconvertibleTypes
         return search(isbn)
                 .stream()
-                .filter(b -> isbn.equals(b.getIsbn10().orElse(null)) || isbn.equals(b.getIsbn13().orElse(null)))
+                .filter(b -> b.getIsbn10().equals(isbn) || b.getIsbn13().equals(isbn))
                 .findFirst();
     }
 
-    private InputStream fetch(String format, String term) throws IOException {
+    private InputStream fetch(String format, Object term) throws IOException {
         try {
-            URL url = new URL(format(format, encode(term, "UTF-8")));
+            URL url = new URL(format(format, encode(term.toString(), "UTF-8")));
             URLConnection urlConnection = url.openConnection();
             urlConnection.addRequestProperty("Accept-Encoding", "gzip");
             urlConnection.addRequestProperty("User-Agent", userAgent);

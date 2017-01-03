@@ -55,11 +55,11 @@ public class BookDaoTest {
                 .build();
 
         final Iterable<String> terms = ImmutableList.of(
-                "rumo und die wunder im dunkeln"/*,
+                "rumo und die wunder im dunkeln",
                 "the stand, das letzte gefecht",
                 "mohammed, eine abrechnung",
                 "walter moers",
-                "stephen king"*/
+                "stephen king"
         );
 
         for (String term : terms) {
@@ -68,6 +68,11 @@ public class BookDaoTest {
             boolean atLeastOnePublishedDateFound = false;
             boolean atLeastOnePageCountFound = false;
             boolean atLeastOneReloadedFound = false;
+            boolean atLeastOneISBN13Found = false;
+            boolean atLeastOneISBN10Found = false;
+            boolean atLeastOneLanguageFound = false;
+            boolean atLeastOneThumbnailFound = false;
+            boolean atLeastOneThumbnailSmallFound = false;
 
             final List<Book> books = bookDao.search(term);
 
@@ -78,9 +83,15 @@ public class BookDaoTest {
                 assertNotNull(book);
                 assertFalse(isNullOrEmpty(book.getAuthor()));
                 assertFalse(isNullOrEmpty(book.getTitle()));
-                atLeastOnePageCountFound |= book.getPageCount() != 0;
+                atLeastOnePageCountFound |= book.getPageCount().isPresent();
                 atLeastOneSubtitleFound |= book.getSubTitle().isPresent();
                 atLeastOnePublishedDateFound |= book.getPublishedDate().isPresent();
+                atLeastOneISBN13Found |= book.getIsbn13().isPresent();
+                atLeastOneISBN10Found |= book.getIsbn10().isPresent();
+                atLeastOneLanguageFound |= book.getLanguage().isPresent();
+                atLeastOneISBN13Found |= book.getIsbn13().isPresent();
+                atLeastOneThumbnailFound |= book.getThumbnailUrl().isPresent();
+                atLeastOneThumbnailSmallFound |= book.getSmallThumbnailUrl().isPresent();
 
                 Optional<Book> reloaded;
 
@@ -102,6 +113,11 @@ public class BookDaoTest {
             assertTrue(atLeastOnePublishedDateFound);
             assertTrue(atLeastOnePageCountFound);
             assertTrue(atLeastOneReloadedFound);
+            assertTrue(atLeastOneISBN13Found);
+            assertTrue(atLeastOneISBN10Found);
+            assertTrue(atLeastOneLanguageFound);
+            assertTrue(atLeastOneThumbnailFound);
+            assertTrue(atLeastOneThumbnailSmallFound);
         }
     }
 }

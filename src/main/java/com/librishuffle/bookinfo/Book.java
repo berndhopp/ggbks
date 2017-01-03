@@ -6,11 +6,11 @@ import java.net.URL;
 import java.util.Optional;
 
 import static com.google.common.base.Joiner.on;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 public class Book {
-    private final String isbn13;
-    private final String isbn10;
     private final String title;
     private final String subTitle;
     private final String author;
@@ -19,6 +19,8 @@ public class Book {
     private final String language;
     private final URL thumbnailUrl;
     private final URL smallThumbnailUrl;
+    private String isbn13;
+    private String isbn10;
 
     Book(Item item) {
         checkNotNull(item);
@@ -28,19 +30,18 @@ public class Book {
         this.publishedDate = volumeInfo.publishedDate;
         this.pageCount = volumeInfo.pageCount;
 
-        this.isbn13 = volumeInfo.industryIdentifiers
-                .stream()
-                .filter(identifier -> "ISBN_13".equals(identifier.type))
-                .map(industryIdentifier -> industryIdentifier.identifier)
-                .findFirst()
-                .orElse("");
+        for (IndustryIdentifier industryIdentifier : volumeInfo.industryIdentifiers) {
+            switch (industryIdentifier.type) {
+                case "ISBN_10":
+                    this.isbn10 = industryIdentifier.identifier;
+                    break;
+                case "ISBN_13":
+                    this.isbn13 = industryIdentifier.identifier;
+                    break;
+            }
+        }
 
-        this.isbn10 = volumeInfo.industryIdentifiers
-                .stream()
-                .filter(i -> "ISBN_10".equals(i.type))
-                .map(i -> i.identifier)
-                .findFirst()
-                .orElse("");
+        checkArgument(!isNullOrEmpty(volumeInfo.title));
 
         this.title = volumeInfo.title;
         this.subTitle = volumeInfo.subtitle;
@@ -57,11 +58,11 @@ public class Book {
     }
 
     public Optional<String> getIsbn13() {
-        return Optional.ofNullable(isbn13);
+        return Optional.of(isbn13);
     }
 
     public Optional<String> getIsbn10() {
-        return Optional.ofNullable(isbn10);
+        return Optional.of(isbn10);
     }
 
     public String getTitle() {
@@ -80,8 +81,8 @@ public class Book {
         return Optional.ofNullable(publishedDate);
     }
 
-    public short getPageCount() {
-        return pageCount;
+    public Optional<Short> getPageCount() {
+        return pageCount == 0 ? Optional.empty() : Optional.of(pageCount);
     }
 
     public Optional<String> getLanguage() {
@@ -101,7 +102,7 @@ public class Book {
         if (this == o) return true;
         if (!(o instanceof Book)) return false;
         Book book = (Book) o;
-        return getPageCount() == book.getPageCount() &&
+        return Objects.equal(getPageCount(), book.getPageCount()) &&
                 Objects.equal(getIsbn13(), book.getIsbn13()) &&
                 Objects.equal(getIsbn10(), book.getIsbn10()) &&
                 Objects.equal(getTitle(), book.getTitle()) &&
